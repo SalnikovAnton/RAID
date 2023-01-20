@@ -30,24 +30,17 @@ MACHINES = {
 	}
 
 		
-  },
+  }
 }
 
 Vagrant.configure("2") do |config|
-
-  MACHINES.each do |boxname, boxconfig|
-
-      config.vm.define boxname do |box|
-
-          box.vm.box = boxconfig[:box_name]
-          box.vm.host_name = boxname.to_s
-
-          #box.vm.network "forwarded_port", guest: 3260, host: 3260+offset
-
-          box.vm.network "private_network", ip: boxconfig[:ip_addr]
-
-          box.vm.provider :virtualbox do |vb|
-            	  vb.customize ["modifyvm", :id, "--memory", "1024"]
+    MACHINES.each do |boxname, boxconfig|
+        config.vm.define boxname do |box|
+            box.vm.box = boxconfig[:box_name]
+            box.vm.host_name = boxname.to_s
+            box.vm.network "private_network", ip: boxconfig[:ip_addr]
+            box.vm.provider :virtualbox do |vb|
+                vb.customize ["modifyvm", :id, "--memory", "1024"]
                   needsController = false
 		  boxconfig[:disks].each do |dname, dconf|
 			  unless File.exist?(dconf[:dfile])
@@ -63,6 +56,12 @@ Vagrant.configure("2") do |config|
                      end
                   end
           end
+ 	  box.vm.provision "shell", inline: <<-SHELL
+	      mkdir -p ~root/.ssh
+              cp ~vagrant/.ssh/auth* ~root/.ssh
+	      yum install -y mdadm smartmontools hdparm gdisk
+            SHELL
+
       end
   end
 end
